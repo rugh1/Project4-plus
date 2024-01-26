@@ -117,5 +117,10 @@ def main():
 
 if __name__ == "__main__":
     # Call the main handler function
+    valid_request = "GET /index.html HTTP/1.1\r\n\r\n"
+    assert valid_get(valid_request)
+
+    invalid_request = "INVALID_REQUEST\r\n\r\n"
+    assert not valid_get(invalid_request)
+
     main()
-    #print(rugh_http.HttpGet.get_parm_from_url('GET /calculate-next?num=101 HTTP/1.1'))
