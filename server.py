@@ -1,8 +1,14 @@
+"""
+Author: Rugh1
+Date: 12.01.2024
+Description: web server for project 4
+"""
 import re
 import socket
 import rugh_http
 import logging
-
+import server_functions
+from comm import *
 # Configure logging
 logging.basicConfig(filename='server.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -13,6 +19,16 @@ PORT = 80
 SOCKET_TIMEOUT = 2
 WEBROOT = 'webroot'
 
+PATH_FUNCTIONS = {
+    '/moved': 'moved',
+    '/error': 'error',
+    '/forbidden': 'forbidden',
+    '/calculate-next':'calculate_next',
+    '/calculate-area' : 'calculate_area',
+    '/upload':'post_file',
+    '/image': 'get_file'
+    # Add more paths and functions as needed
+}
 
 def handle_client(client_socket):
     """
@@ -25,19 +41,22 @@ def handle_client(client_socket):
     """
     logging.info("New client connection")
     try:
-        req = client_socket.recv(1024).decode()
+        req = recv(client_socket)
         logging.debug("Received request: %s", req)
         if len(req) > 0:
             if valid_get(req):
-                req = rugh_http.HttpGet(req)
-                res = req.create_response()
+                req = parse_http_request(req)
+                if(req.method == 'POST'):
+                    req.body = recv_body(client_socket, int(req.header['Content-Length']))
+                create_response = getattr(server_functions, PATH_FUNCTIONS.get(req.path, 'others'))
+                res = create_response(req)
             else:
-                res = rugh_http.HttpRespond(400, {})
-                print(res.to_binary().decode())
-            logging.info("Sending response: %s %s", res.line, res.header)
-            client_socket.send(res.to_binary())
+                res = rugh_http.HttpRespond(400, {}).to_binary()
+            logging.info("Sending response: %s", res)
+            client_socket.send(res)
     except Exception as e:
-        logging.error("Error handling request: %s", e)
+        logging.error("Error handling request: %s",  str(e))
+        print(str(e))
     finally:
         client_socket.close()
         logging.info("Client connection closed")
@@ -45,7 +64,7 @@ def handle_client(client_socket):
 
 def valid_get(request_string):
     """
-    Check if a GET request is valid.
+    Check if a GET or POST request is valid.
 
     :param request_string: The GET request string.
     :type request_string: str
@@ -53,11 +72,18 @@ def valid_get(request_string):
     :return: True if the GET request is valid, False otherwise.
     :rtype: bool
     """
-    pattern = r"^GET (.*) HTTP/1.1"
-    match = re.match(pattern, request_string)
-    print(request_string)
+    pattern1 = r"^GET (.*) HTTP/1.1"
+    pattern2 = r"^POST (.*) HTTP/1.1"
+    match = re.match(pattern1, request_string)
+    if match is None:
+         match = re.match(pattern2, request_string)
     return match is not None
 
+
+def parse_http_request(request):
+    if(request.startswith('GET')):
+        return rugh_http.HttpGet(request)
+    return rugh_http.HttpPost(request)
 
 def main():
     """
@@ -92,3 +118,4 @@ def main():
 if __name__ == "__main__":
     # Call the main handler function
     main()
+    #print(rugh_http.HttpGet.get_parm_from_url('GET /calculate-next?num=101 HTTP/1.1'))

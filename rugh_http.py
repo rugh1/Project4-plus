@@ -1,3 +1,8 @@
+"""
+Author: Rugh1
+Date: 12.01.2024
+Description: classes for http GET and POST request and respond and general 
+"""
 import os
 import logging
 
@@ -52,6 +57,7 @@ class Rugh_http:
         """
         if http_text is not None:
             self.line, self.header, self.body = self.parse_http_request(http_text)
+            self.header = self.convert_header_to_dict(self.header)
         else:
             self.line = line
             self.header = header
@@ -111,6 +117,14 @@ class Rugh_http:
         return headers
 
 
+    @staticmethod
+    def convert_header_to_dict(header):
+        header = header.split("\r\n")
+        headers = {p.split(':')[0] : p.split(':')[1] for p in header}
+        return headers
+
+
+
 class HttpRespond(Rugh_http):
     def __init__(self, code, header, body=None, content_type=None):
         """
@@ -137,6 +151,7 @@ class HttpRespond(Rugh_http):
 
 
 class HttpGet(Rugh_http):
+    method = 'GET'
     REDIRECTION_DICTIONARY = {
         '/moved': '/index.html'
     }
@@ -148,44 +163,9 @@ class HttpGet(Rugh_http):
             :return: None            :rtype:
         """
         super().__init__(http_text=http_text)
-        self.parm = None  # later
+        self.parm = self.get_parm_from_url(self.line) 
         self.path = self.get_path_from_url(self.line)
         print(self.path)
-
-    def create_response(self):
-        """
-            Creates an HTTP response for the GET request.
-
-            :return: The HTTP response.
-            :rtype: HttpRespond
-        """
-        if self.path == '/':
-            self.path = '/index.html'
-        file_path = self.WEB_ROOT + self.path
-        print(file_path)
-        logging.info("Creating response for path: %s", self.path)
-        if self.path == '/moved':
-            print('moving')
-            return HttpRespond(302, {'Location': '/'})
-        if self.path == '/error':
-            return HttpRespond(500, {})
-        if self.path == '/forbidden':
-            return HttpRespond(403, {})
-        if os.path.isfile(file_path):
-            print("found")
-            with open(file_path, "rb") as f:
-                file = f.read()
-                print(len(file))
-                content_type = self.content_types[file_path.split('.')[-1]]
-            return HttpRespond(200, {}, file, content_type)
-        else:
-            print("notfound")
-            file_path = 'webroot/404.html'
-            with open(file_path, "rb") as f:
-                file = f.read()
-                print(len(file))
-                content_type = self.content_types[file_path.split('.')[-1]]
-            return HttpRespond(404, {}, file, content_type)
 
     @staticmethod
     def get_path_from_url(url):
@@ -199,5 +179,76 @@ class HttpGet(Rugh_http):
             :rtype: str
         """
         logging.debug("Extracting path from URL: %s", url)
-        url = url.split(" ")
-        return url[1]
+        url = url.split(" ")[1].split('?')[0]
+        return url
+    
+    @staticmethod
+    def get_parm_from_url(url):
+        """
+            Extracts the paramters from the URL.
+
+            :param url: The URL.
+            :type url: str
+
+            :return: The paramters of the url.
+            :rtype: dictionry of parmaters in string format
+        """
+        parm_str = url.split('?')
+        if(len(parm_str) > 1):
+            parm_str = parm_str[1]
+            print(parm_str)
+            parm_str = parm_str.split(" ")
+            parm_str.pop()
+            parm_str = ' '.join(parm_str)
+            print(parm_str)
+            parm = {p.split('=')[0] : p.split('=')[1] for p in parm_str.split('&')}
+            return parm
+
+class HttpPost(Rugh_http):
+    method = 'POST'
+    def __init__(self, http_text):
+        """
+            Initializes an instance of the HttpGet class.
+
+            :return: None            :rtype:
+        """
+        super().__init__(http_text=http_text)
+        self.parm = self.get_parm_from_url(self.line) 
+        self.path = self.get_path_from_url(self.line)
+
+    @staticmethod
+    def get_path_from_url(url):
+        """
+            Extracts the path from the URL.
+
+            :param url: The URL.
+            :type url: str
+
+            :return: The path from the URL.
+            :rtype: str
+        """
+        logging.debug("Extracting path from URL: %s", url)
+        url = url.split(" ")[1].split('?')[0]
+        return url
+    
+    @staticmethod
+    def get_parm_from_url(url):
+        """
+            Extracts the paramters from the URL.
+
+            :param url: The URL.
+            :type url: str
+
+            :return: The paramters of the url.
+            :rtype: dictionry of parmaters in string format
+        """
+        parm_str = url.split('?')
+        if(len(parm_str) > 1):
+            parm_str = parm_str[1]
+            print(parm_str)
+            parm_str = parm_str.split(" ")
+            parm_str.pop()
+            parm_str = ' '.join(parm_str)
+            print(parm_str)
+            parm = {p.split('=')[0] : p.split('=')[1] for p in parm_str.split('&')}
+            return parm
