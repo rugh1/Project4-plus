@@ -1,11 +1,11 @@
 """
 Author: Rugh1
-Date: 12.01.2024
+Date: 25.01.2024
 Description: web server for project 4
 """
 import re
 import socket
-import rugh_http
+import rughhttp
 import logging
 import server_functions
 from comm import *
@@ -46,12 +46,12 @@ def handle_client(client_socket):
         if len(req) > 0:
             if valid_get(req):
                 req = parse_http_request(req)
-                if(req.method == 'POST'):
+                if req.method == 'POST':
                     req.body = recv_body(client_socket, int(req.header['Content-Length']))
                 create_response = getattr(server_functions, PATH_FUNCTIONS.get(req.path, 'others'))
                 res = create_response(req)
             else:
-                res = rugh_http.HttpRespond(400, {}).to_binary()
+                res = rughhttp.HttpRespond(400, {}).to_binary()
             logging.info("Sending response: %s", res)
             client_socket.send(res)
     except Exception as e:
@@ -81,9 +81,9 @@ def valid_get(request_string):
 
 
 def parse_http_request(request):
-    if(request.startswith('GET')):
-        return rugh_http.HttpGet(request)
-    return rugh_http.HttpPost(request)
+    if request.startswith('GET'):
+        return rughhttp.HttpGet(request)
+    return rughhttp.HttpPost(request)
 
 def main():
     """

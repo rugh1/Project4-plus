@@ -1,6 +1,6 @@
 """
 Author: Rugh1
-Date: 12.01.2024
+Date: 25.01.2024
 Description: classes for http GET and POST request and respond and general 
 """
 import os
@@ -10,7 +10,7 @@ import logging
 logging.basicConfig(filename='http_server.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-class Rugh_http:
+class RughHttp:
     WEB_ROOT = 'webroot'
     STATUS_CODES = {
         100: 'Continue',
@@ -119,13 +119,22 @@ class Rugh_http:
 
     @staticmethod
     def convert_header_to_dict(header):
+        """
+        Converts HTTP headers from string to dict.
+
+        :param header: The HTTP headers as string.
+        :type header: str
+
+        :return: The dict representation of HTTP headers.
+        :rtype: dict
+        """
         header = header.split("\r\n")
         headers = {p.split(':')[0] : p.split(':')[1] for p in header}
         return headers
 
 
 
-class HttpRespond(Rugh_http):
+class HttpRespond(RughHttp):
     def __init__(self, code, header, body=None, content_type=None):
         """
         Initializes an instance of the HttpRespond class.
@@ -150,7 +159,7 @@ class HttpRespond(Rugh_http):
         return
 
 
-class HttpGet(Rugh_http):
+class HttpGet(RughHttp):
     method = 'GET'
     REDIRECTION_DICTIONARY = {
         '/moved': '/index.html'
@@ -194,7 +203,7 @@ class HttpGet(Rugh_http):
             :rtype: dictionry of parmaters in string format
         """
         parm_str = url.split('?')
-        if(len(parm_str) > 1):
+        if len(parm_str) > 1:
             parm_str = parm_str[1]
             print(parm_str)
             parm_str = parm_str.split(" ")
@@ -204,7 +213,7 @@ class HttpGet(Rugh_http):
             parm = {p.split('=')[0] : p.split('=')[1] for p in parm_str.split('&')}
             return parm
 
-class HttpPost(Rugh_http):
+class HttpPost(RughHttp):
     method = 'POST'
     def __init__(self, http_text):
         """
@@ -243,7 +252,7 @@ class HttpPost(Rugh_http):
             :rtype: dictionry of parmaters in string format
         """
         parm_str = url.split('?')
-        if(len(parm_str) > 1):
+        if len(parm_str) > 1:
             parm_str = parm_str[1]
             print(parm_str)
             parm_str = parm_str.split(" ")
